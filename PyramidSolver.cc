@@ -25,6 +25,7 @@ vector<Card> read_card_nums(FILE *fp) {
 
     vector<Card> cards;
     for (char *p=buf; *p>=' '; ++p) {
+        if (*p == '1') continue;  // enable "10"
         int num = char_to_card_num(*p);
         if (num >= 0) cards.push_back(num);
     }
@@ -55,12 +56,11 @@ int okmask(int still) {
     return mask;
 }
 
-#define PARAM_STEP   0
-#define PARAM_P_REM  1
-#define PARAM_D_REM  2
-#define PARAM_ROUNDN 3
-#define PARAM_C0     4
-#define PARAM_C1     5
+#define PARAM_P_REM  0
+#define PARAM_D_REM  1
+#define PARAM_ROUNDN 2
+#define PARAM_C0     3
+#define PARAM_C1     4
 
 #define OPERATION_SOLVED      1
 #define OPERATION_C0_KING     2
@@ -196,81 +196,85 @@ string ops_human(vector<int>& ops) {
 
 string params_pp(vector<int>& params) {
     // cout << "ASSERT_IF_VALID_PARAMS:" << params << endl;
-    int step = -params[PARAM_STEP];
     int p_rem = params[PARAM_P_REM]; // ピラミッド側の残り
     int d_rem = params[PARAM_D_REM]; // 手持ち札の残り
     int roundn = params[PARAM_ROUNDN]; // 回(0〜)
     int c0 = params[PARAM_C0], c1 = params[PARAM_C1]; // c0, c1の位置
     // printf("  p_rem = %d\n", p_rem);
     stringstream ss;
-    ss << "[" << step << ":"
-     << " " << hex << p_rem
-     << " " << hex << d_rem
-     << " " << dec << "R" << (1+roundn)
-     << "(" << c0 << "," << c1 << ")]";
+    ss << "[" << hex << p_rem
+       << " " << hex << d_rem
+       << " " << dec << "R" << (1+roundn)
+       << "(" << c0 << "," << c1 << ")]";
     return ss.str();
 }
 
-void show_status(vector<int> curr_params) {
-    int step = curr_params[PARAM_STEP],
-        p_rem = curr_params[PARAM_P_REM],
+void show_status(int step, vector<int> curr_params) {
+    int p_rem = curr_params[PARAM_P_REM],
         d_rem = curr_params[PARAM_D_REM],
         roundn = curr_params[PARAM_ROUNDN],
         c0 = curr_params[PARAM_C0],
         c1 = curr_params[PARAM_C1];
-    cout << params_pp(curr_params);
-//    printf("[%d %07x %07x %d %d %d] ", -step, p_rem, d_rem, roundn, c0, c1);
-    if (c0 >= 0) _p(deck[c0]); else putchar('-');
-    if (c1 >= 0) _p(deck[c1]); else putchar('-');
+    cout << step << ") " << params_pp(curr_params);
+
     putchar(' ');
+    int m = 1, mm = 2, x = p_rem, mask = okmask(p_rem), available = p_rem & mask;
+    for (int st=1,mm=2,base=0; st<=7; base+=st,mm<<=st,st++) {
+        if (st > 1) cout << '/';
 
-    int mask = p_rem & okmask(p_rem);
-
-    vector<int> available;
-    for (int i=0,m=1; i<NUM_PYRAMID_CARDS; ++i,m<<=1) {
-        if (mask & m) available.push_back(i);
+        stringstream ss;
+        bool visible = false;
+        for (int j=0; j<st; ++j) {
+            int i = base + j;
+            if (p_rem & m) {
+                if (available & m) {
+                    // _p(pyramid[i]);
+                    ss << (char)num_single[pyramid[i]];
+                    visible = true;
+                }
+                else ss << '#';
+            } else {
+                ss << '.';
+                visible = true;
+            }
+            x &= ~m;
+            m <<= 1;
+        }
+        if (visible) cout << ss.str();
+        if (x == 0) break;
     }
-    int A = available.size();
-    // assert(A > 0);
 
-    rep(i, A) _p(pyramid[available[i]]);
-    // putchar('\n');
+    putchar(' ');
+    if (c1 >= 0) _p(deck[c1]); else putchar('-');
+    if (c0 >= 0) _p(deck[c0]); else putchar('-');
 }
 
-// bool _solved = false;
-priority_queue<pair<int, vector<int> > > pq;
+priority_queue<pair<int, pair<int, vector<int> > > > pq;
 set<vector<int> > _visited;
-map<vector<int>, pair<vector<int>, vector<int> > > last_step;
+map<vector<int>, pair<int, pair<vector<int>, vector<int> > > > last_step;
 
 inline void assert_if_valid_params(vector<int>& params) {
-    // cout << "ASSERT_IF_VALID_PARAMS:" << params << endl;
     int p_rem = params[PARAM_P_REM]; // ピラミッド側の残り
-    // printf("  p_rem = %d\n", p_rem);
     assert(0 <= p_rem && p_rem < (1 << NUM_PYRAMID_CARDS));
 
     int d_rem = params[PARAM_D_REM]; // 手持ち札の残り
-    // printf("  d_rem = %d\n", d_rem);
     assert(0 <= d_rem && d_rem < (1 << NUM_DECK_CARDS));
 
     int roundn = params[PARAM_ROUNDN]; // 回(0〜)
-    // printf("  roundn = %d\n", roundn);
     assert(0 <= roundn && roundn < NUM_ALLOWED_ROUNDS);
 
     int c0 = params[PARAM_C0], c1 = params[PARAM_C1]; // c0, c1の位置
-    // printf("  c0,c1 = %d,%d\n", c0,c1);
     assert((c0 == UNAVAILABLE && c1 >= 0) || (c0 == UNAVAILABLE && c1 == UNAVAILABLE)
         || (c0 >= 0 && c1 > c0) || (c0 >= 0 && c1 == UNAVAILABLE));
 }
 
-void add_to_queue(vector<int>& curr_params, vector<int>& next_params, vector<int>& ops) {
-//    int _tmp[] = { p_rem, d_rem, round, c0, c1 };
-//    vector<int> tmp( _tmp, _tmp+5 );
-    // cout << "ADD_TO_QUEUE:" << curr_params << next_params << ops << endl;
-    // cout << "ADD_TO_QUEUE:" << params_pp(next_params) << " " << ops_pp(ops) << endl;
+void add_to_queue(int curr_step, vector<int>& curr_params, vector<int>& next_params, vector<int>& ops) {
+    if (found(next_params, _visited)) return;
+
     assert_if_valid_params(next_params);
 
-    int step = next_params[PARAM_STEP],
-        p_rem = next_params[PARAM_P_REM],
+    int next_step = curr_step + 1;
+    int p_rem = next_params[PARAM_P_REM],
         d_rem = next_params[PARAM_D_REM],
         roundn = next_params[PARAM_ROUNDN],
         c0 = next_params[PARAM_C0],
@@ -279,23 +283,21 @@ void add_to_queue(vector<int>& curr_params, vector<int>& next_params, vector<int
     int p_taken = NUM_PYRAMID_CARDS - __builtin_popcount(p_rem);
     int d_taken = NUM_DECK_CARDS - __builtin_popcount(d_rem);
 
-    int score = -step + p_taken*4 - (c0+c1) - (roundn*NUM_DECK_CARDS);
+    int score = -next_step + p_taken*4 - (c0+c1) - (roundn*NUM_DECK_CARDS);
 //    score = -step + p_taken*3 - c1 - (roundn*NUM_DECK_CARDS);
 //    score = -step + p_taken*3 - d_taken;
-//    score = -step + p_taken;
+    score = -next_step + p_taken*4 - d_taken;
 
     if (found(next_params, last_step)) {
-        if (curr_params[PARAM_STEP] > last_step[next_params].first[PARAM_STEP]) {
-            last_step[next_params] = make_pair(curr_params, ops);
+        if (curr_step > last_step[next_params].first) {
+            last_step[next_params] = make_pair(curr_step, make_pair(curr_params, ops));
         }
     } else {
-        last_step[next_params] = make_pair(curr_params, ops);
+        last_step[next_params] = make_pair(curr_step, make_pair(curr_params, ops));
     }
 
-    if (!found(next_params, _visited)) {
-        pq.push(make_pair(score, next_params));
-        _visited.insert(next_params);
-    }
+    pq.push(make_pair(score, make_pair(-next_step, next_params)));
+    _visited.insert(next_params);
 }
 
 inline int search_prev_c0(int next_d_rem, int c0) {
@@ -305,6 +307,7 @@ inline int search_prev_c0(int next_d_rem, int c0) {
     }
     return c0;
 }
+
 inline int search_next_c1(int next_d_rem, int c1) {
     while (c1 < NUM_DECK_CARDS) {
         if (next_d_rem & (1 << c1)) return c1;
@@ -315,30 +318,31 @@ inline int search_next_c1(int next_d_rem, int c1) {
 }
 
 
-
-void solve() {
+void solve(bool verbose=false) {
     assert(pyramid.size() == NUM_PYRAMID_CARDS && deck.size() == NUM_DECK_CARDS);
 
     // pyramidの残りカード (28bit)
     // deckの残りカード (24bit)
     // いまどこを開いてるか (0-47) の値2つ =6bit x 2 = 12bit
 
-    int _initial[] = { 0, (1 << NUM_PYRAMID_CARDS)-1, (1 << NUM_DECK_CARDS)-1, 0, UNAVAILABLE, 0 };
-    vector<int> initial_params( _initial, _initial+6 );
+    int _initial[] = { (1 << NUM_PYRAMID_CARDS)-1, (1 << NUM_DECK_CARDS)-1, 0, UNAVAILABLE, 0 };
+    vector<int> initial_params( _initial, _initial+5 );
     assert_if_valid_params(initial_params);
-    pq.push(make_pair(0, initial_params));
+    pq.push(make_pair(0, (make_pair(0, initial_params))));
     _visited.insert(initial_params);
 
     int max_p_taken = 0;
 
     while (!pq.empty()) {
         int score = pq.top().first;
-        vector<int> curr_params = pq.top().second; pq.pop();
+        int curr_step = -pq.top().second.first;
+        vector<int> curr_params = pq.top().second.second;
+        pq.pop();
         assert_if_valid_params(curr_params);
-        // cout << params_pp(curr_params) << endl;
-
-        int step = curr_params[PARAM_STEP],
-            p_rem = curr_params[PARAM_P_REM], // ピラミッド側の残り
+        if (verbose) {
+            cout << curr_params << params_pp(curr_params) << endl;
+        }
+        int p_rem = curr_params[PARAM_P_REM], // ピラミッド側の残り
             d_rem = curr_params[PARAM_D_REM], // 手持ち札の残り
             roundn = curr_params[PARAM_ROUNDN], // 回(0〜)
             c0 = curr_params[PARAM_C0], // c0の位置
@@ -361,14 +365,14 @@ void solve() {
             history.push_back(make_pair(curr_params, vector<int>(3, 0)));
             while (1) {
                 if (!found(curr_params, last_step)) break;
-                vector<int> prev_params = last_step[curr_params].first;
-                vector<int> ops = last_step[curr_params].second;
+                vector<int> prev_params = last_step[curr_params].second.first;
+                vector<int> ops = last_step[curr_params].second.second;
                 history.push_back(make_pair(prev_params, ops));
                 curr_params = prev_params;
             }
             reverse(all(history));
             rep(i, history.size()) {
-                show_status(history[i].first);
+                show_status(1+i, history[i].first);
                 vector<int> ops = history[i].second;
                 cout << "\t; " << ops_human(ops) << endl;
             }
@@ -458,17 +462,7 @@ void solve() {
             ;
         }
 
-        /*
-        printf("[possible_operations = "); // %d\n", possible_operations);
-        rep(i, 10) {
-            if (possible_operations & (1 << i)) printf("%s | ", operations[i]);
-        }
-        printf("]\n");
-        */
-
-        // int next_p_rem, next_d_rem, next_roundn, next_c0, next_c1;
-        vector<int> next_params(6);
-        next_params[PARAM_STEP] = step - 1; // fixed (negative)
+        vector<int> next_params(5);
         vector<int> ops(3, -1);
         int next_d_rem;
 
@@ -476,7 +470,6 @@ void solve() {
         if (possible_operations & OPERATION_C0_KING) {
             // 右(c0) = KING
             // turn c0
-//            assert(p_rem & (1 << pi));
             assert(d_rem & (1 << c0));
 
             next_params[PARAM_P_REM] = p_rem;
@@ -485,7 +478,7 @@ void solve() {
             next_params[PARAM_C0] = search_prev_c0(next_d_rem, c0);
             next_params[PARAM_C1] = c1;
             ops[0] = OPERATION_C0_KING; ops[1] = c0; ops[2] = UNAVAILABLE;
-            add_to_queue(curr_params, next_params, ops);
+            add_to_queue(curr_step, curr_params, next_params, ops);
         }
         if (possible_operations & OPERATION_C0_C1) {
             // 右(c0) + 左(c1)
@@ -499,7 +492,7 @@ void solve() {
             next_params[PARAM_C0] = search_prev_c0(next_d_rem, c0);
             next_params[PARAM_C1] = search_next_c1(next_d_rem, c1);
             ops[0] = OPERATION_C0_C1; ops[1] = c0; ops[2] = c1;
-            add_to_queue(curr_params, next_params, ops);
+            add_to_queue(curr_step, curr_params, next_params, ops);
         }
         if (possible_operations & OPERATION_C0_P) {
             // 右(c0) + ピラミッドのどれか
@@ -517,14 +510,13 @@ void solve() {
                     next_params[PARAM_C0] = search_prev_c0(next_d_rem, c0);
                     next_params[PARAM_C1] = c1;
                     ops[0] = OPERATION_C0_P; ops[1] = c0; ops[2] = pi;
-                    add_to_queue(curr_params, next_params, ops);
+                    add_to_queue(curr_step, curr_params, next_params, ops);
                 }
             }
         }
         if (possible_operations & OPERATION_C1_KING) {
             // 左(c1) = KING
             // turn c1
-//            assert(p_rem & (1 << pi));
             assert(d_rem & (1 << c1));
             next_params[PARAM_P_REM] = p_rem;
             next_params[PARAM_D_REM] = next_d_rem = d_rem - (1 << c1);
@@ -532,7 +524,7 @@ void solve() {
             next_params[PARAM_C0] = c0;
             next_params[PARAM_C1] = search_next_c1(next_d_rem, c1);
             ops[0] = OPERATION_C1_KING; ops[1] = c1; ops[2] = UNAVAILABLE;
-            add_to_queue(curr_params, next_params, ops);
+            add_to_queue(curr_step, curr_params, next_params, ops);
         }
         if (possible_operations & OPERATION_C1_P) {
             // 左(c1) + ピラミッドのどれか
@@ -550,7 +542,7 @@ void solve() {
                     next_params[PARAM_C0] = c0;
                     next_params[PARAM_C1] = search_next_c1(next_d_rem, c1);
                     ops[0] = OPERATION_C1_P; ops[1] = c1; ops[2] = pi;
-                    add_to_queue(curr_params, next_params, ops);
+                    add_to_queue(curr_step, curr_params, next_params, ops);
                 }
             }
         }
@@ -568,7 +560,7 @@ void solve() {
                     next_params[PARAM_C0] = c0;
                     next_params[PARAM_C1] = c1;
                     ops[0] = OPERATION_P_KING; ops[1] = pi; ops[2] = UNAVAILABLE;
-                    add_to_queue(curr_params, next_params, ops);
+                    add_to_queue(curr_step, curr_params, next_params, ops);
                 }
             }
         }
@@ -589,7 +581,7 @@ void solve() {
                     next_params[PARAM_C0] = c0;
                     next_params[PARAM_C1] = c1;
                     ops[0] = OPERATION_P_P; ops[1] = pi; ops[2] = pj;
-                    add_to_queue(curr_params, next_params, ops);
+                    add_to_queue(curr_step, curr_params, next_params, ops);
                 }
             }
         }
@@ -601,7 +593,7 @@ void solve() {
             next_params[PARAM_C0] = c1;
             next_params[PARAM_C1] = search_next_c1(next_d_rem, c1+1);
             ops[0] = OPERATION_TURN; ops[1] = UNAVAILABLE; ops[2] = UNAVAILABLE;
-            add_to_queue(curr_params, next_params, ops);
+            add_to_queue(curr_step, curr_params, next_params, ops);
         }
         if (possible_operations & OPERATION_BIG_TURN) {
             // deckを最初に戻す
@@ -611,7 +603,7 @@ void solve() {
             next_params[PARAM_C0] = -1;
             next_params[PARAM_C1] = search_next_c1(next_d_rem, 0);
             ops[0] = OPERATION_BIG_TURN; ops[1] = UNAVAILABLE; ops[2] = UNAVAILABLE;
-            add_to_queue(curr_params, next_params, ops);
+            add_to_queue(curr_step, curr_params, next_params, ops);
         }
 
         // return;
@@ -629,20 +621,10 @@ void load(char *path) {
         assert(row.size() == r);
         pyramid.insert(pyramid.end(), all(row));
     }
-    /*
-    // cout << pyramid << endl;
-    for (int r=1,i=0; r<=7; ++r) {
-        write_single(pyramid.begin()+i, pyramid.begin()+i+r);
-        i += r;
-    }
-    */
 
     deck.clear();
     deck = read_card_nums(fp);
-    /*
-    // cout << deck << endl;
-    write_single(all(deck));
-    */
+
     vector<int> st(13, 0);
     tr(it, pyramid) ++st[*it];
     tr(it, deck) ++st[*it];
@@ -654,8 +636,9 @@ void load(char *path) {
 
 int main(int argc, char **argv) {
     load(argv[1]);
+    bool verbose = (argc > 2);
 
-    solve();
+    solve(verbose);
 
     return 0;
 }
