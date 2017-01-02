@@ -97,12 +97,26 @@ bool load__board(vector<vector<Card> >& _board, char *path) {
         if (!fgets(buf, 32, fp)) break;
         rtrim(buf);
         int len = strlen(buf);
-        rep(l, NUM_LINES) {
-            if (3*l >= len) break;
-            int num = char_to_card_num(buf[3*l]), suite = char_to_card_suite(buf[3*l+1]);
-            Card card = make_card(num, suite);
-            _board[l].push_back(card);
-            ++num_cards;
+        bool suite_comes_next = false;
+        int num = -1, suite = -1;
+        for (int p=0, l=0; p < len; ++p) {
+            char c = buf[p];
+            if (c == ' ') {
+                suite_comes_next = false;
+                continue;
+            }
+            if (suite_comes_next) {
+                suite = char_to_card_suite(c);
+                Card card = make_card(num, suite);
+                _board[l++].push_back(card);
+                ++num_cards;
+                if (l == NUM_LINES) break;
+                suite_comes_next = false;
+            } else {
+                if (c == '1') continue;
+                num = char_to_card_num(c);
+                suite_comes_next = true;
+            }
         }
     }
     fclose(fp);
