@@ -18,7 +18,7 @@ def cli():
 @click.argument('image-path', type=click.Path(exists=True, readable=True))
 @click.option('--short-form', is_flag=True, default=True)
 def scan(image_path, short_form):
-    Xs = flatten_2d(scan_freecell_image(image_path, 3))
+    Xs = flatten_2d(scan_freecell_image(image_path, 2))
 
     m = Model()
     m.load()
