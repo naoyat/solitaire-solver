@@ -121,6 +121,7 @@ int solve(int head=deck[0], int st=1, int mask=0) {
         }
         reverse(all(iter));
         for (int i=0; i<iter.size()-1; ++i) {
+            printf("%d) ", 1+i);
             ll key_b = iter[i], key_a = iter[i+1];
             int head_b, st_b, mask_b, head_a, st_a, mask_a;
             render_key(key_b, head_b, st_b, mask_b);
