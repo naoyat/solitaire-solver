@@ -268,12 +268,20 @@ inline void assert_if_valid_params(vector<int>& params) {
         || (c0 >= 0 && c1 > c0) || (c0 >= 0 && c1 == UNAVAILABLE));
 }
 
+
+bool verbose;
+bool best_mode;
+int best_step;
+vector<int> best_params;
+
 void add_to_queue(int curr_step, vector<int>& curr_params, vector<int>& next_params, vector<int>& ops) {
     if (found(next_params, _visited)) return;
 
     assert_if_valid_params(next_params);
 
     int next_step = curr_step + 1;
+    if (next_step >= best_step) return;
+
     int p_rem = next_params[PARAM_P_REM],
         d_rem = next_params[PARAM_D_REM],
         roundn = next_params[PARAM_ROUNDN],
@@ -283,10 +291,13 @@ void add_to_queue(int curr_step, vector<int>& curr_params, vector<int>& next_par
     int p_taken = NUM_PYRAMID_CARDS - __builtin_popcount(p_rem);
     int d_taken = NUM_DECK_CARDS - __builtin_popcount(d_rem);
 
-    int score = -next_step + p_taken*4 - (c0+c1) - (roundn*NUM_DECK_CARDS);
+    int score = -next_step;
+    if (!best_mode) {
+        // score += p_taken*4 - (c0+c1) - (roundn*NUM_DECK_CARDS);
 //    score = -step + p_taken*3 - c1 - (roundn*NUM_DECK_CARDS);
 //    score = -step + p_taken*3 - d_taken;
-    score = -next_step + p_taken*4 - d_taken;
+        score += p_taken*4 - d_taken;
+    }
 
     if (found(next_params, last_step)) {
         if (curr_step > last_step[next_params].first) {
@@ -317,8 +328,25 @@ inline int search_next_c1(int next_d_rem, int c1) {
     return c1;
 }
 
+void show_history(vector<int>& last_params) {
+    vector<pair<vector<int>, vector<int> > > history;
+    history.push_back(make_pair(last_params, vector<int>(3, 0)));
+    while (1) {
+        if (!found(last_params, last_step)) break;
+        vector<int> prev_params = last_step[last_params].second.first;
+        vector<int> ops = last_step[last_params].second.second;
+        history.push_back(make_pair(prev_params, ops));
+        last_params = prev_params;
+    }
+    reverse(all(history));
+    rep(i, history.size()) {
+        show_status(1+i, history[i].first);
+        vector<int> ops = history[i].second;
+        cout << "\t; " << ops_human(ops) << endl;
+    }
+}
 
-void solve(bool verbose=false) {
+void solve() {
     assert(pyramid.size() == NUM_PYRAMID_CARDS && deck.size() == NUM_DECK_CARDS);
 
     // pyramidの残りカード (28bit)
@@ -333,12 +361,16 @@ void solve(bool verbose=false) {
 
     int max_p_taken = 0;
 
+    best_step = 9999;
+
     while (!pq.empty()) {
         int score = pq.top().first;
         int curr_step = -pq.top().second.first;
         vector<int> curr_params = pq.top().second.second;
         pq.pop();
         assert_if_valid_params(curr_params);
+        if (curr_step >= best_step) continue;
+
         if (verbose) {
             cout << curr_params << params_pp(curr_params) << endl;
         }
@@ -358,27 +390,15 @@ void solve(bool verbose=false) {
         }
 
         if (p_rem == 0) {
-            // possible_operations = OPERATION_SOLVED;
-            printf("\nSOLVED.\n");
+            printf("(%d)", curr_step);
+            fflush(stdout);
+            best_params.assign(all(curr_params));
+            best_step = min(best_step, curr_step);
+            if (!best_mode) break;
 
-            vector<pair<vector<int>, vector<int> > > history;
-            history.push_back(make_pair(curr_params, vector<int>(3, 0)));
-            while (1) {
-                if (!found(curr_params, last_step)) break;
-                vector<int> prev_params = last_step[curr_params].second.first;
-                vector<int> ops = last_step[curr_params].second.second;
-                history.push_back(make_pair(prev_params, ops));
-                curr_params = prev_params;
-            }
-            reverse(all(history));
-            rep(i, history.size()) {
-                show_status(1+i, history[i].first);
-                vector<int> ops = history[i].second;
-                cout << "\t; " << ops_human(ops) << endl;
-            }
-
-            return;
+            continue;
         }
+
         // else ...
         vector<int> available_pyramid_cards;
         set<int> available_pyramid_card_numbers;
@@ -608,12 +628,16 @@ void solve(bool verbose=false) {
 
         // return;
     }
+
+    printf("\n");
+    show_history(best_params);
+    return;
 }
 
 
-void load(char *path) {
+int load(char *path) {
     FILE *fp = fopen(path, "r");
-    if (fp == NULL) return;
+    if (fp == NULL) return -1;
 
     pyramid.clear();
     for (int r=1; r<=7; ++r) {
@@ -631,14 +655,45 @@ void load(char *path) {
     rep(i, 13) assert(st[i] == 4);
 
     fclose(fp);
+    return 0;
 }
 
 
-int main(int argc, char **argv) {
-    load(argv[1]);
-    bool verbose = (argc > 2);
+#include <unistd.h>
 
-    solve(verbose);
+void show_usage() {
+    printf("./PyramidSolver [-b] [-v] <game-file>\n");
+}
+
+int main(int argc, char **argv) {
+    best_mode = verbose = false;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "bv")) != -1) {
+        switch (opt) {
+        case 'b':  // best_mode
+            best_mode = true;
+            break;
+        case 'v':  // verbose
+            verbose = true;
+            break;
+        default:
+            show_usage();
+            return 0;
+        }
+    }
+
+    if (optind == argc) {
+        show_usage();
+        return 0;
+    }
+
+    if (load(argv[optind]) == -1) {
+        printf("cannot open the game file %s\n", argv[optind]);
+        return 0;
+    }
+
+    solve();
 
     return 0;
 }
