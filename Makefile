@@ -18,5 +18,8 @@ PyramidSolver: PyramidSolver.cc common.o
 FreeCellSolver: FreeCellSolver.cc common.o
 	$(CXX) $(CXXFLAGS) -o $@ $< common.o
 
+fcs125: fcs125.cc common.o
+	$(CXX) $(CXXFLAGS) -o $@ $< common.o
+
 clean:
 	rm -f *Solver *.o

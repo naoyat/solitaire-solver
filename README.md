@@ -61,6 +61,30 @@ $ python freecell_solver.py solve snapshot_picture.png
 
 で画像認識、からのソルバ処理が行える。（画像認識だけなら`solve`の代わりに`scan`で実行）
 
+〜
+
+♣だけ最速で揃えたい、みたいな問題（デイリーチャレンジ2017/1/25版）には、scoringを変えれば対応できることを確認。
+（fcs125.cc参照）
+
+```fcs125.diff
+--- FreeCellSolver.cc	2017-01-03 03:42:12.000000000 +0900
++++ fcs125.cc	2017-01-25 08:03:26.000000000 +0900
+@@ -460,8 +460,11 @@
+         rep(l, NUM_LINES) if (_board[l].size() == 0) ++max_movable;
+
+         int score = 0;
+-        rep(s, NUM_SUITES) score += card_num(_board[GOAL][s]);
+-        if (score == 48) {
++        rep(s, NUM_SUITES) {
++            score += card_num(_board[GOAL][s]) * (s == CLUB ? 1 : 0);
++        }
++        // if (score == 48) {
++        if (score == 12) {
+             printf("\n"); // SOLVED.
+             return here;
+         }
+```
+
 ## PyramidSolver
 
 ```
