@@ -39,7 +39,7 @@ def scan(image_path, short_form):
 @click.argument('game-path', type=click.Path(exists=True, readable=True))
 def solve(game_path):
     if game_path.endswith('.png'):
-        Xs = flatten_2d(scan_freecell_image(game_path, 3))
+        Xs = flatten_2d(scan_freecell_image(game_path, 2))
 
         m = Model()
         m.load()
