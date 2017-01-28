@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <sstream>
+#include <cstdio>
 // #include <algorithm>
 using namespace std;
 
@@ -16,6 +17,8 @@ extern const char *num_full[13];
 extern const char *num_single;
 extern const char *suite_full[4];
 extern const char *suite_single;
+
+typedef int Card;
 
 #define HEART   0
 #define CLUB    1
@@ -30,12 +33,15 @@ inline bool is_black(int suite) { return suite % 2; }
 
 int char_to_card_num(char ch);
 int char_to_card_suite(char ch);
-int trans_str(vector<int>& v, const char *s);
+int trans_str(std::vector<int>& v, const char *s);
 
+int read_card_num(FILE *fp);
+int read_card_suite(FILE *fp);
 
-typedef int Card;
+std::vector<int> read_card_nums(FILE *fp);
+std::vector<Card> read_cards(FILE *fp);
 
-inline int make_card(int num, int suite) { // 0-12, 0-3
+inline int make_card(int num, int suite) {  // 0-12, 0-3
     if (num < 0 || suite < 0) return VACANT;
     return (num << 2) | (suite);
 }
@@ -58,12 +64,24 @@ inline char _single(Card card) {
     // assert(0 <= num && num < 13);
     return num_single[card_num(card)];
 }
-inline string _full(Card card) {
+inline std::string _full(Card card) {
     if (card == VACANT) return VACANT_STR;
 
-    stringstream ss;
+    std::stringstream ss;
     int num = card_num(card), suite = card_suite(card);
     ss << num_full[num] << suite_full[suite];
+    return ss.str();
+}
+
+inline std::string _full_cards(std::vector<Card> cards, char *delim=" ") {
+    std::stringstream ss;
+    int L = cards.size();
+    for (int i=0; i<L; ++i) {
+        Card card = cards[i];
+        int num = card_num(card), suite = card_suite(card);
+        if (i > 0) ss << delim;
+        ss << num_full[num] << suite_full[suite];
+    }
     return ss.str();
 }
 

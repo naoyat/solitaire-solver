@@ -17,21 +17,6 @@ void _p(int card_num) {
     putchar(num_single[card_num]);
 }
 
-vector<Card> read_card_nums(FILE *fp) {
-    assert(fp != NULL);
-
-    char buf[80];
-    if (fgets(buf, 80, fp) == NULL) return vector<Card>();
-
-    vector<Card> cards;
-    for (char *p=buf; *p>=' '; ++p) {
-        if (*p == '1') continue;  // enable "10"
-        int num = char_to_card_num(*p);
-        if (num >= 0) cards.push_back(num);
-    }
-    return cards;
-}
-
 vector<Card> pyramid, deck;
 
 void write_single(vector<Card>::iterator from, vector<Card>::iterator to) {
@@ -641,7 +626,7 @@ int load(char *path) {
 
     pyramid.clear();
     for (int r=1; r<=7; ++r) {
-        vector<Card> row = read_card_nums(fp);
+        vector<int> row = read_card_nums(fp);
         assert(row.size() == r);
         pyramid.insert(pyramid.end(), all(row));
     }

@@ -19,8 +19,8 @@
 #include <queue>
 using namespace std;
 
-//#undef NDEBUG
-//#include <cassert>
+#undef NDEBUG
+#include <cassert>
 
 
 #include "common.h"
@@ -92,31 +92,12 @@ bool load__board(vector<vector<Card> >& _board, char *path) {
     rep(l, NUM_LINES) _board.push_back(vector<Card>());
 
     int num_cards = 0;
-    while (1) {
-        char buf[32];
-        if (!fgets(buf, 32, fp)) break;
-        rtrim(buf);
-        int len = strlen(buf);
-        bool suite_comes_next = false;
-        int num = -1, suite = -1;
-        for (int p=0, l=0; p < len; ++p) {
-            char c = buf[p];
-            if (c == ' ') {
-                suite_comes_next = false;
-                continue;
-            }
-            if (suite_comes_next) {
-                suite = char_to_card_suite(c);
-                Card card = make_card(num, suite);
-                _board[l++].push_back(card);
-                ++num_cards;
-                if (l == NUM_LINES) break;
-                suite_comes_next = false;
-            } else {
-                if (c == '1') continue;
-                num = char_to_card_num(c);
-                suite_comes_next = true;
-            }
+    rep(i, 7) {
+        vector<Card> row = read_cards(fp);
+        assert(row.size() == (i < 6 ? 8 : 4));
+        rep(l, row.size()) {
+            _board[l].push_back(row[l]);
+            ++num_cards;
         }
     }
     fclose(fp);
@@ -407,7 +388,7 @@ void route_back(vector<vector<Card> >& initial_board, string& here) {
 
 //            cout << "  "; board_pp(b0);
         }
-        // cout << "  "; 
+        // cout << "  ";
         board_pp(b1);
 
         b0 = b1;

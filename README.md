@@ -7,7 +7,7 @@ C++の実装練習にちょうど良かった。
 データでのカードの表現は `([A234567890JQK]|10)([sdhc])?` を想定している。
 10は"0"でも可。（全て１文字で表せてパースが楽なので最初は0で書いていた）
 
-全てのカードを確認できるぐらいなら恐らく解けてる Klondike と Spider については割愛。
+全てのカードを確認できるぐらいなら恐らく解けてる Spider については割愛。
 
 ## TriPeaksSolver
 
@@ -104,4 +104,25 @@ TriPeaks同様、undoを駆使しながらピラミッドとデッキのカー�
 
 ```
 $ ./PyramidSolver pyramid_sample_1.txt
+```
+
+## KlondikeSolver
+
+```
+cat <<EOF > klondike_sample_1.txt
+8c
+3s3d
+Kc4h2d
+Jd3c7c9s
+QhQd5s0hAc
+7s3h5d4cAh0s
+JcAsJs5cQc6hQs
+2s6sKh 2h9h9d Jh8d2c 4s5h0d 0cAd4d 7d8s6d Kd8hKs 7h6c9c
+EOF
+```
+
+Klondikeは全てのカードの配置を確認できるぐらいなら解けるはずだが、手数を制限されている場合のためにソルバを書いた。
+
+```
+$ ./KlondikeSolver klondike_sample_1.txt
 ```
