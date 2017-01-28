@@ -21,6 +21,19 @@ Q6J8847Q49
 EOF
 
 $ ./TripeaksSolver tripeaks_sample_2.txt
+pyramid: Q6J8847Q496Q29K6A39K35A58A23
+deck: 0J45KQ2067704JKJ78350A29
+536553 <solved>
+1) from pyramid d3 (J)
+2) from pyramid d1 (Q)
+3) turn deck (J)
+4) from pyramid d8 (Q)
+...
+46) turn deck (A)
+47) turn deck (2)
+48) from pyramid b4 (A)
+49) from pyramid a2 (2)
+50) from pyramid a3 (3)
 ```
 undoを駆使しながらピラミッドとデッキのカードを調べてデータ化する必要がある。
 最後の行が手元のカードデッキ。（上のデータだと、最初に表示されているのが10で、めくっていくとK,4,5,...が続く）
@@ -43,6 +56,23 @@ Qd Kh 7c 2c 6d Ah Ac 0c
 EOF
 
 $ ./FreecellSolver freecell_8130153.txt
+################################################
+ ~ ~ ~ ~ | ~ ~ ~ ~ | 7509Q82 | JAK6K08 | 9452787 | 74QQ2J3 | 6Q9365 | J903AK | K864AA | 345J02 |
+(1) A♠ at line 7 -> GOAL
+ ~ ~ ~ ~ | ~ ~ ~ A | 7509Q82 | JAK6K08 | 9452787 | 74QQ2J3 | 6Q9365 | J903AK | K864A | 345J02 |
+(2) 2♠ at line 1 -> GOAL
+ ~ ~ ~ ~ | ~ ~ ~ 2 | 7509Q8 | JAK6K08 | 9452787 | 74QQ2J3 | 6Q9365 | J903AK | K864A | 345J02 |
+(3) 3♠ at line 4 -> GOAL
+ ~ ~ ~ ~ | ~ ~ ~ 3 | 7509Q8 | JAK6K08 | 9452787 | 74QQ2J | 6Q9365 | J903AK | K864A | 345J02 |
+...
+(92) J♣ at line 2 -> GOAL
+ ~ ~ ~ ~ | Q J K K |  |  |  |  |  |  | K | KQ |
+(93) Q♣ at line 8 -> GOAL
+ ~ ~ ~ ~ | Q Q K K |  |  |  |  |  |  | K | K |
+(94) K♡ at line 8 -> GOAL
+ ~ ~ ~ ~ | K Q K K |  |  |  |  |  |  | K |  |
+(95) K♣ at line 7 -> GOAL
+ ~ ~ ~ ~ | K K K K |  |  |  |  |  |  |  |  |
 ```
 
 そしてデータ入力が面倒くさかったので、スナップショット画像を勝手に読み取らせることにした。
@@ -104,6 +134,19 @@ TriPeaks同様、undoを駆使しながらピラミッドとデッキのカー�
 
 ```
 $ ./PyramidSolver pyramid_sample_1.txt
+############################(53)
+1) //////AJ6AJ0Q 9-	; pyramid g1<A> + pyramid g7<Q>
+2) //////.J6AJ0. 9-	; TURN
+3) //////.J6AJ0. 99	; TURN
+4) //////.J6AJ0. 39	; deck(left)<3> + pyramid g6<0>
+5) /////#####5/.J6AJ.. 49	; TURN
+...
+49) /4. 9-	; deck(left)<9> + pyramid b1<4>
+50) 5 K-	; TURN
+51) 5 KK	; TURN
+52) 5 3K	; TURN
+53) 5 83	; deck(left)<8> + pyramid a1<5>
+54) . A3	;
 ```
 
 ## KlondikeSolver
@@ -125,4 +168,14 @@ Klondikeは全てのカードの配置を確認できるぐらいなら解ける
 
 ```
 $ ./KlondikeSolver klondike_sample_1.txt
+SOLVED.#############################################
+[1] (LINE#5->) A♣ (->GOAL)
+[2] (TURN =>K♡)
+[3] (TURN =>9♢)
+[4] (TURN =>2♣)
+[5] (DECK->) 2♣ (->GOAL)
+[6] (DECK->) 8♢ (->LINE#4 on 9♠)
+...
+[125] (LINE#2->) K♡ (->GOAL)
+[126] (LINE#6->) K♠ (->GOAL)
 ```

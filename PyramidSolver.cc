@@ -200,7 +200,7 @@ void show_status(int step, vector<int> curr_params) {
         roundn = curr_params[PARAM_ROUNDN],
         c0 = curr_params[PARAM_C0],
         c1 = curr_params[PARAM_C1];
-    cout << step << ") " << params_pp(curr_params);
+    cout << step << ")";  // << " " << params_pp(curr_params);
 
     putchar(' ');
     int m = 1, mm = 2, x = p_rem, mask = okmask(p_rem), available = p_rem & mask;
