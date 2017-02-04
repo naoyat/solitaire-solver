@@ -604,7 +604,7 @@ void solve() {
             // deckを最初に戻す
             next_params[PARAM_P_REM] = p_rem;
             next_params[PARAM_D_REM] = next_d_rem = d_rem;
-            next_params[PARAM_ROUNDN] = roundn;
+            next_params[PARAM_ROUNDN] = roundn + 1;
             next_params[PARAM_C0] = -1;
             next_params[PARAM_C1] = search_next_c1(next_d_rem, 0);
             ops[0] = OPERATION_BIG_TURN; ops[1] = UNAVAILABLE; ops[2] = UNAVAILABLE;
