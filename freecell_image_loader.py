@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 from PIL import Image
 import os
 import sys
@@ -35,7 +37,7 @@ def _render(borders):
         else:
             _tmp.append((bright_from, i))
             bright_from = -1
-    print _tmp
+    print(_tmp)
 
 
 def scan_border_vert(im, x):
@@ -120,7 +122,7 @@ def scan_freecell_image(image_path, step=2):
             right = left + 72  # 96, 186, ..., 726 (-24)
             middle = (left + right) / 2
             # scan_border_vert(im, left + 3)
-            # print (c, r)
+            # print((c, r))
             img_left = scan_image(pix, left, top, middle, bottom, step)
             img_right = scan_image(pix, middle, top, right, bottom, step)
             row.append((img_left, img_right))

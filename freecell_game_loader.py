@@ -1,8 +1,7 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 from collections import defaultdict
-import numpy as np
-
 import click
 
 
@@ -38,7 +37,7 @@ def parse(game_path):  # returns 7 rows of 8 cols
 
     for card, occ in c.items():
         if occ >= 2:
-            print class_to_num[1+(card / 13)] + class_to_suite[1+(card % 13)], occ
+            print(class_to_num[1+(card / 13)] + class_to_suite[1+(card % 13)], occ)
     assert len(c) == 52 and len(n) == 13 and len(s) == 4
 
     return data
@@ -56,7 +55,7 @@ def transpose(data): # 7x8 -> 8x7
 
 def dump_data(data):
     for row in data:
-        print ' '.join(class_to_num[1+num] + class_to_suite[1+suite] for num, suite in row)
+        print(' '.join(class_to_num[1+num] + class_to_suite[1+suite] for num, suite in row))
 
 
 @click.command()
@@ -65,7 +64,7 @@ def main(game_path):
     data = parse(game_path)
 
     dump_data(data)
-    print
+    print()
     dump_data(transpose(data))
 
 

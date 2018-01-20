@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -42,7 +44,6 @@ class data_X:
 
     def data(self):
         a = np.array(self._Xs)
-#        print '(X)', a.shape
         return one_dim(a)
 
 class data_y:
@@ -58,7 +59,6 @@ class data_y:
 
     def data(self):
         a = np.array([one_of_k(num, self.k) for num in self._ys])
-#        print '(y)', a.shape
         return a
 
 
@@ -94,7 +94,7 @@ class Model:
     #
     def learn(self):
         def _learn(Xs, ys):
-            # print "LEARN", Xs[0], ys[0]
+            # print("LEARN", Xs[0], ys[0])
             nb_epoch = 100
             callbacks = []
             patience = 10
@@ -121,13 +121,13 @@ class Model:
     def evaluate(self, Xs, ys):
         def _evaluate(model, Xs, ys):
             loss, acc = model.evaluate([Xs], [ys], batch_size=32, verbose=0)
-            print loss, acc
+            print(loss, acc)
 
         _X_nums, _X_suites = zip(*Xs)
         _y_nums, _y_suites = zip(*ys)
 
         X_nums, y_nums = data_X(_X_nums), data_y(13, _y_nums)
-        # print '>', X_nums.data().shape, y_nums.data().shape
+        # print('>', X_nums.data().shape, y_nums.data().shape)
         _evaluate(self.model_nums, X_nums.data(), y_nums.data())
 
         X_suites, y_suites = data_X(_X_suites), data_y(4, _y_suites)
@@ -192,7 +192,7 @@ snapshot_dir_path = 'freecell_snapshots'
 def build():
     _Xs, _ys = [], []
 
-    print 'LOADING DATA...'
+    print('LOADING DATA...')
     assert os.path.isdir(snapshot_dir_path)
     for name in os.listdir(snapshot_dir_path):
         if name.endswith('.png'):
@@ -212,13 +212,13 @@ def build():
     m.add_Xs(Xs)
     m.add_ys(ys)
 
-    print 'LEARNING...'
+    print('LEARNING...')
     m.learn()
 
-    print 'EVALUATING...'
+    print('EVALUATING...')
     m.evaluate(Xs, ys)
 
-    print 'DONE'
+    print('DONE')
 
 
 if __name__ == '__main__':

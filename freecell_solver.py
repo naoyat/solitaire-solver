@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 import os
-# import numpy as np
 import click
 
 from freecell_image_loader import scan_freecell_image
@@ -32,7 +33,7 @@ def scan(image_path, short_form):
     # save_txt_path = image_path.replace('.png', '.txt')
     # with open(save_txt_path, 'w') as fp:
     for r in range(7):
-        print ' '.join(_pred[r*8 + c] for c in range(8 if r < 6 else 4))
+        print(' '.join(_pred[r*8 + c] for c in range(8 if r < 6 else 4)))
 
 
 @cli.command()
@@ -50,7 +51,7 @@ def solve(game_path):
         with open(save_txt_path, 'w') as fp:
             for r in range(7):
                 row = ' '.join(_pred[r*8 + c] for c in range(8 if r < 6 else 4))
-                print row
+                print(row)
                 fp.write(row + '\n')
         game_path = save_txt_path
     else:
